@@ -29,6 +29,9 @@ const PixelArtCanvas: React.FC<PixelArtCanvasProps> = ({
     (row: number, col: number) => {
       setPixels((prevPixels) => {
         const newPixels = prevPixels.map((r) => [...r]);
+        if (!newPixels[row]) {
+          newPixels[row] = [];
+        }
         newPixels[row][col] = currentColor;
         return newPixels;
       });
@@ -72,21 +75,16 @@ const PixelArtCanvas: React.FC<PixelArtCanvasProps> = ({
     if (hiddenCanvas) {
       const ctx = hiddenCanvas.getContext("2d");
       if (ctx) {
-        // Clear the canvas
         ctx.clearRect(0, 0, hiddenCanvas.width, hiddenCanvas.height);
 
-        // Draw each pixel on the hidden canvas
         for (let row = 0; row < height; row++) {
           for (let col = 0; col < width; col++) {
-            ctx.fillStyle =
-              pixels[row][col] !== "transparent"
-                ? pixels[row][col]
-                : "rgba(0,0,0,0)";
+            const pixelColor = pixels?.[row]?.[col] || "rgba(0,0,0,0)";
+            ctx.fillStyle = pixelColor;
             ctx.fillRect(col, row, 1, 1);
           }
         }
 
-        // Generate the image and trigger the download
         const link = document.createElement("a");
         link.href = hiddenCanvas.toDataURL("image/png");
         link.download = "pixel-art.png";
