@@ -37,7 +37,7 @@ const NewArtworkDialog: React.FC<NewArtworkDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="bg-gray-900 text-white sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create New Artwork</DialogTitle>
         </DialogHeader>
@@ -49,8 +49,9 @@ const NewArtworkDialog: React.FC<NewArtworkDialogProps> = ({
             <Input
               id="name"
               value={name}
+              placeholder="Art name"
               onChange={(e) => setName(e.target.value)}
-              className="col-span-3"
+              className="col-span-3 text-black"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -62,7 +63,7 @@ const NewArtworkDialog: React.FC<NewArtworkDialogProps> = ({
               type="number"
               value={width}
               onChange={(e) => setWidth(Number(e.target.value))}
-              className="col-span-3"
+              className="col-span-3 text-black"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -74,7 +75,7 @@ const NewArtworkDialog: React.FC<NewArtworkDialogProps> = ({
               type="number"
               value={height}
               onChange={(e) => setHeight(Number(e.target.value))}
-              className="col-span-3"
+              className="col-span-3 text-black"
             />
           </div>
         </div>
