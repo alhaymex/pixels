@@ -1,37 +1,161 @@
-import Link from "next/link";
+"use client";
 
-export default function HomePage() {
+import React, { useState, useEffect } from "react";
+import PixelArtCanvas from "@/components/PixelArtCanvas";
+import NewArtworkDialog from "@/components/NewArtworkDialog";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, X } from "lucide-react";
+
+interface Artwork {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  pixels: string[][];
+}
+
+export default function Home() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [artworks, setArtworks] = useState<Artwork[]>([]);
+  const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
+
+  useEffect(() => {
+    const savedArtworks = localStorage.getItem("pixelArtworks");
+    if (savedArtworks) {
+      try {
+        const parsedArtworks: Artwork[] = JSON.parse(savedArtworks);
+        const validatedArtworks: Artwork[] = parsedArtworks.map((artwork) => ({
+          ...artwork,
+          pixels: Array.isArray(artwork.pixels)
+            ? artwork.pixels
+            : createEmptyPixels(artwork.width, artwork.height),
+        }));
+        setArtworks(validatedArtworks);
+      } catch (error) {
+        console.error("Error parsing saved artworks:", error);
+        setArtworks([]);
+      }
+    }
+  }, []);
+
+  const createEmptyPixels = (width: number, height: number): string[][] => {
+    return Array(height)
+      .fill(null)
+      .map(() => Array(width).fill("transparent"));
+  };
+
+  const handleCreateNewArtwork = (
+    name: string,
+    width: number,
+    height: number,
+  ) => {
+    const newArtwork: Artwork = {
+      id: Date.now().toString(),
+      name,
+      width,
+      height,
+      pixels: createEmptyPixels(width, height),
+    };
+    const updatedArtworks = [...artworks, newArtwork];
+    setArtworks(updatedArtworks);
+    localStorage.setItem("pixelArtworks", JSON.stringify(updatedArtworks));
+    setSelectedArtwork(newArtwork);
+  };
+
+  const handleSaveArtwork = (pixels: string[][]) => {
+    if (selectedArtwork) {
+      const updatedArtwork: Artwork = { ...selectedArtwork, pixels };
+      const updatedArtworks = artworks.map((art) =>
+        art.id === updatedArtwork.id ? updatedArtwork : art,
+      );
+      setArtworks(updatedArtworks);
+      localStorage.setItem("pixelArtworks", JSON.stringify(updatedArtworks));
+      setSelectedArtwork(updatedArtwork);
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-      <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-        <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-          Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-        </h1>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-            href="https://create.t3.gg/en/usage/first-steps"
-            target="_blank"
+    <main className="min-h-screen bg-gray-900 px-4 py-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8 flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-white">Pixel Art Gallery</h1>
+          <Button
+            className="flex items-center gap-2"
+            onClick={() => setIsDialogOpen(true)}
           >
-            <h3 className="text-2xl font-bold">First Steps →</h3>
-            <div className="text-lg">
-              Just the basics - Everything you need to know to set up your
-              database and authentication.
-            </div>
-          </Link>
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-            href="https://create.t3.gg/en/introduction"
-            target="_blank"
-          >
-            <h3 className="text-2xl font-bold">Documentation →</h3>
-            <div className="text-lg">
-              Learn more about Create T3 App, the libraries it uses, and how to
-              deploy it.
-            </div>
-          </Link>
+            <PlusCircle className="h-5 w-5" />
+            Create New Artwork
+          </Button>
         </div>
+
+        {selectedArtwork ? (
+          <div className="mb-8">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white">
+                {selectedArtwork.name}
+              </h2>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedArtwork(null)}
+              >
+                <X className="mr-2 h-5 w-5" />
+                Close
+              </Button>
+            </div>
+            <PixelArtCanvas
+              width={selectedArtwork.width}
+              height={selectedArtwork.height}
+              pixels={selectedArtwork.pixels}
+              onSave={handleSaveArtwork}
+            />
+          </div>
+        ) : artworks.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {artworks.map((artwork) => (
+              <div
+                key={artwork.id}
+                className="cursor-pointer rounded-lg bg-gray-800 p-4 transition-colors hover:bg-gray-700"
+                onClick={() => setSelectedArtwork(artwork)}
+              >
+                <h3 className="mb-2 text-lg font-semibold text-white">
+                  {artwork.name}
+                </h3>
+                <p className="text-gray-400">
+                  {artwork.width}x{artwork.height}
+                </p>
+                <div
+                  className="mt-2 grid aspect-square w-full"
+                  style={{
+                    gridTemplateColumns: `repeat(${artwork.width}, 1fr)`,
+                  }}
+                >
+                  {artwork.pixels.map((row, i) =>
+                    row.map((color, j) => (
+                      <div
+                        key={`${i}-${j}`}
+                        className="h-full w-full"
+                        style={{ backgroundColor: color }}
+                      />
+                    )),
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex min-h-[200px] items-center justify-center rounded-lg bg-gray-800">
+            <p className="text-gray-400">
+              {`No artworks yet. Click "Create New Artwork" to get started!`}
+            </p>
+          </div>
+        )}
       </div>
+
+      <NewArtworkDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onSave={handleCreateNewArtwork}
+      />
     </main>
   );
 }
